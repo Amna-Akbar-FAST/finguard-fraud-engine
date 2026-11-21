@@ -1,0 +1,19 @@
+# Compiled binaries and object files
+*.exe
+*.out
+*.o
+*.obj
+*.pdb
+*.ilk
+
+# Visual Studio & VS Code build/workspace folders
+.vs/
+.vscode/
+x64/
+x86/
+Debug/
+Release/
+*.user
+*.suo
+*.sln
+*.vcxproj*
