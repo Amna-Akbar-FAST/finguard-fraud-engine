@@ -4,19 +4,100 @@
 
 using namespace std;
 
+// ACCOUNT PROFILE CONSTRUCTORS
+// Initializes all baseline fields and clears the sliding timestamp buffer
+
 AccountProfile::AccountProfile()
     : accountID(""), avgSpend(0.0), homeCity(""), txnCount(0),
-      lastActiveTimestamp(-1)
+      lastActiveTimestamp(-1) , recentTimestampCount(0)
 {
+    for (int i = 0; i < MAX_RECENT_TIMESTAMPS; i++)
+    {
+        recentTimestamps[i] = -1;
+    }
 }
 
-AccountProfile::AccountProfile(const string& id, double averageSpend,
-                               const string& city, int transactionCount,
-                               int lastActive)
+AccountProfile::AccountProfile(const string& id, double averageSpend, const string& city, int transactionCount,
+    int lastActive)
     : accountID(id), avgSpend(averageSpend), homeCity(city),
       txnCount(transactionCount), lastActiveTimestamp(lastActive)
 {
+    for (int i = 0; i < MAX_RECENT_TIMESTAMPS; i++)
+    {
+        recentTimestamps[i] = -1;
+    }
+    if (lastActive >= 0)
+    {
+        recentTimestamps[0] = lastActive;
+        recentTimestampCount = 1;
+    }
 }
+
+// PHASE 3.1 HELPER: RECORD TRANSACTION TIMESTAMP
+// Locates the account's bucket node and appends `timestamp` to its fixed-size
+// sliding window array. If the buffer reaches capacity, the oldest timestamp
+// is dropped by shifting elements one position to the left.
+
+
+bool AccountHashTable::recordTransactionTimestamp(const string& accountID, int timestamp)
+{
+    int index = hashFunc(accountID);
+    Node* current = buckets[index];
+
+    while (current != nullptr)
+    {
+        if (current->profile.accountID == accountID)
+        {
+            if (current->profile.recentTimestampCount < AccountProfile::MAX_RECENT_TIMESTAMPS)
+            {
+                current->profile.recentTimestamps[current->profile.recentTimestampCount] = timestamp;
+                current->profile.recentTimestampCount++;
+            }
+            else
+            {
+                // Shift left to keep the most recent timestamps
+                for (int i = 1; i < AccountProfile::MAX_RECENT_TIMESTAMPS; i++)
+                {
+                    current->profile.recentTimestamps[i - 1] = current->profile.recentTimestamps[i];
+                }
+                current->profile.recentTimestamps[AccountProfile::MAX_RECENT_TIMESTAMPS - 1] = timestamp;
+            }
+            return true;
+        }
+        current = current->next;
+    }
+    return false;
+}
+
+
+// PHASE 3.1 HELPER: COUNT TRANSACTIONS IN TIME WINDOW (RULE C)
+// Scans the account's stored timestamps and counts how many fall within
+// [currentTimestamp - windowMinutes, currentTimestamp].
+// Used by FraudRuleEngine to trigger Rule C when > 3 txns occur in 5 minutes.
+
+
+int AccountHashTable::countTransactionsInWindow(const string& accountID,
+    int currentTimestamp,
+    int windowMinutes) const
+{
+    AccountProfile profile;
+    if (!getProfile(accountID, profile))
+    {
+        return 0;
+    }
+
+    int countInWindow = 0;
+    for (int i = 0; i < profile.recentTimestampCount; i++)
+    {
+        int diff = currentTimestamp - profile.recentTimestamps[i];
+        if (diff >= 0 && diff <= windowMinutes)
+        {
+            countInWindow++;
+        }
+    }
+    return countInWindow;
+}
+
 
 AccountHashTable::Node::Node(const AccountProfile& account)
     : profile(account), next(nullptr)

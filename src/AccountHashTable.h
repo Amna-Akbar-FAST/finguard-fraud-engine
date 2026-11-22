@@ -3,20 +3,38 @@
 #include "FinGuard.h"
 
 // Account baseline information used by the fraud-analysis pipeline.
+
+
+// ACCOUNT PROFILE STRUCT
+// Stores each user's historical baseline behavior inside the AccountHashTable.
+// Used by the FraudRuleEngine (Phase 3.1) to detect deviations in spend,
+// location, and transaction frequency.
+
+
 struct AccountProfile
 {
-    string accountID;
-    double avgSpend;
-    string homeCity;
-    int txnCount;
-    int lastActiveTimestamp;
+    // Maximum number of recent timestamps tracked per account for Rule C
+    // (avoids STL containers while supporting sliding-window velocity checks)
+    static const int MAX_RECENT_TIMESTAMPS = 20;
+    string accountID;           // Unique account identifier (e.g., "ACC101")
+    double avgSpend;            // Running average of cleared transaction amounts
+    string homeCity;            // Primary/initial city observed for the account
+    int txnCount;               // Total number of cleared transactions used in avgSpend
+    int lastActiveTimestamp;    // Timestamp (in minutes) of the most recent transaction
 
+    // Fixed-size array storing recent transaction timestamps in chronological order
+    // to check how many transactions occur within a 5-minute window (Rule C)
+    int recentTimestamps[MAX_RECENT_TIMESTAMPS];
+    int recentTimestampCount;
     AccountProfile();
     AccountProfile(const string& id, double averageSpend, const string& city,
                    int transactionCount, int lastActive = -1);
 };
 
 // Hash table implemented manually with separate chaining (linked lists).
+
+// ACCOUNT HASH TABLE (SEPARATE CHAINING)
+// Provides O(1) average-time lookup and updates for AccountProfile records.
 class AccountHashTable
 {
 private:
@@ -63,5 +81,14 @@ public:
     bool contains(const string& accountID) const;
     bool isEmpty() const;
     int size() const;
+
+    // PHASE 3.1 VELOCITY TRACKING HELPERS (RULE C)
+
+    // Appends a new transaction timestamp to the account's sliding window.
+    // If the array is full, shifts older entries left to retain the newest ones.
+
+
+    bool recordTransactionTimestamp(const string& accountID, int timestamp);
+    int countTransactionsInWindow(const string& accountID, int currentTimestamp, int windowMinutes) const;
     void displayTable() const;
 };
