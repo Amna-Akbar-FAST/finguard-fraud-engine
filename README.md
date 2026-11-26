@@ -28,13 +28,25 @@ Transactions with a cumulative `riskScore >= 50` are automatically flagged and p
 
 ## Repository Structure
 ```text
-FinGuard-DS-Project/
+finguard-fraud-engine/
 ├── .gitignore
 ├── README.md
 ├── src/
-│   ├── FinGuard.h        # Shared data model & class declarations
-│   ├── FinGuard.cpp      # Custom data structure & fraud rule implementations
-│   └── main.cpp          # CSV loader & interactive console interface
+│   ├── AccountHashTable.h       # Hash table declarations for fast account lookup
+│   ├── AccountHashTable.cpp     # Hash table implementation for account profiles
+│   ├── AlertMaxHeap.h           # Priority queue (max-heap) declarations for high-risk alerts
+│   ├── AlertMaxHeap.cpp         # Max-heap implementation for ranking fraud alerts
+│   ├── AuditStack.h             # Stack declarations for audit trail and rollback history
+│   ├── AuditStack.cpp           # Stack implementation for alert review history
+│   ├── FinGuard.h               # Shared transaction schema & core engine declarations
+│   ├── FinGuard.cpp             # Core utility & CSV ingestion implementations
+│   ├── FraudRuleEngine.h        # Fraud detection rules & risk scoring declarations
+│   ├── FraudRuleEngine.cpp      # Rule evaluation logic (spikes, impossible travel, bursts)
+│   ├── TransactionBST.h         # Binary search tree declarations for indexed queries
+│   ├── TransactionBST.cpp       # BST implementation for time/amount transaction lookups
+│   ├── TransactionQueue.h       # FIFO queue declarations for incoming transaction stream
+│   ├── TransactionQueue.cpp     # Queue implementation for real-time stream processing
+│   └── main.cpp                 # Entry point, CSV loader & interactive console interface
 ├── data/
-│   └── transactions.csv  # Simulated normal and fraudulent transaction dataset
-└── docs/                 # Project poster and submission documentation
+│   └── transactions.csv         # Simulated normal and fraudulent transaction dataset
+└── docs/                        # Project poster and submission documentation
